@@ -37,6 +37,11 @@ module.exports = ({ models, target }, ctx) => {
         model: 'user',
         plugin: 'admin',
       };
+
+      definition.attributes['published_at'] = {
+        type: 'datetime',
+        configurable: false,
+      };
     }
 
     const componentAttributes = Object.keys(definition.attributes).filter(key =>

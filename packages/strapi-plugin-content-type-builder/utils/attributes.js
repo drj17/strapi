@@ -39,7 +39,7 @@ const isRelation = attribute =>
  */
 const formatAttributes = model => {
   return Object.keys(model.attributes).reduce((acc, key) => {
-    if (key === 'created_by' || key === 'updated_by') {
+    if (['created_by', 'updated_by', 'published_at'].includes(key)) {
       return acc;
     }
 
@@ -144,7 +144,6 @@ module.exports = {
   hasComponent,
   isRelation,
   isConfigurable,
-
   replaceTemporaryUIDs,
   formatAttributes,
   formatAttribute,

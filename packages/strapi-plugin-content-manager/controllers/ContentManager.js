@@ -193,10 +193,17 @@ module.exports = {
 
     const { data, files } = ctx.is('multipart') ? parseMultipartBody(ctx) : { data: body };
 
+    const { options } = strapi.getModel(model);
+
     try {
       const result = await contentManagerService.create(
         {
-          data: { ...sanitize(data), created_by: user.id, updated_by: user.id },
+          data: {
+            ...sanitize(data),
+            created_by: user.id,
+            updated_by: user.id,
+            published_at: options.draftAndPublished ? null : new Date(),
+          },
           files,
         },
         { model }
@@ -239,10 +246,12 @@ module.exports = {
 
     const { data, files } = ctx.is('multipart') ? parseMultipartBody(ctx) : { data: body };
 
+    const sanitizedData = sanitize(_.omit(data, ['created_by', 'published_at']));
+
     try {
       const result = await contentManagerService.edit(
         { id },
-        { data: { ...sanitize(_.omit(data, ['created_by'])), updated_by: user.id }, files },
+        { data: { ...sanitizedData, updated_by: user.id }, files },
         { model }
       );
 
@@ -346,7 +355,7 @@ module.exports = {
       : await contentManagerServices.contenttypes.getConfiguration(modelDef.uid);
 
     const field = _.get(modelConfig, `metadatas.${targetField}.edit.mainField`, 'id');
-    const pickFields = [field, 'id', target.primaryKey];
+    const pickFields = [field, 'id', target.primaryKey, 'published_at'];
     const sanitize = d => _.pick(d, pickFields);
 
     ctx.body = _.isArray(entities) ? entities.map(sanitize) : sanitize(entities);

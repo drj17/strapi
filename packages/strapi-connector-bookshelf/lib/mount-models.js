@@ -125,6 +125,11 @@ module.exports = ({ models, target }, ctx) => {
         model: 'user',
         plugin: 'admin',
       };
+
+      definition.attributes['published_at'] = {
+        type: 'datetime',
+        configurable: false,
+      };
     }
 
     // Add every relationships to the loaded model for Bookshelf.
