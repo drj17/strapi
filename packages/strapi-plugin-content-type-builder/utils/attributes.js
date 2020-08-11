@@ -1,6 +1,7 @@
 'use strict';
 
 const _ = require('lodash');
+const utils = require('strapi-utils');
 
 const toUID = (name, plugin) => {
   const modelUID = Object.keys(strapi.contentTypes).find(key => {
@@ -38,11 +39,9 @@ const isRelation = attribute =>
  * @param {Object} context.component - the associated component
  */
 const formatAttributes = model => {
-  return Object.keys(model.attributes).reduce((acc, key) => {
-    if (['created_by', 'updated_by', 'published_at'].includes(key)) {
-      return acc;
-    }
+  const { getEnumerableAttributes } = utils.contentTypes;
 
+  return getEnumerableAttributes(model).reduce((acc, key) => {
     acc[key] = formatAttribute(key, model.attributes[key], { model });
     return acc;
   }, {});

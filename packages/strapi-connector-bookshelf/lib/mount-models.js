@@ -2,7 +2,7 @@
 const _ = require('lodash');
 const { singular } = require('pluralize');
 
-const utilsModels = require('strapi-utils').models;
+const { models: utilsModels, contentTypes } = require('strapi-utils');
 const relations = require('./relations');
 const buildDatabaseSchema = require('./build-database-schema');
 const {
@@ -11,8 +11,9 @@ const {
 } = require('./generate-component-relations');
 const { createParser } = require('./parser');
 const { createFormatter } = require('./formatter');
-
 const populateFetch = require('./populate');
+
+const { PUBLICATION_ATTRIBUTES, CREATOR_ATTRIBUTES } = contentTypes.constants;
 
 const PIVOT_PREFIX = '_pivot_';
 
@@ -116,20 +117,20 @@ module.exports = ({ models, target }, ctx) => {
     });
 
     if (!definition.uid.startsWith('strapi::') && definition.modelType !== 'component') {
-      definition.attributes['created_by'] = {
-        model: 'user',
-        plugin: 'admin',
-      };
+      PUBLICATION_ATTRIBUTES.forEach(key => {
+        definition.attributes[key] = {
+          type: 'datetime',
+          configurable: false,
+        };
+      });
 
-      definition.attributes['updated_by'] = {
-        model: 'user',
-        plugin: 'admin',
-      };
-
-      definition.attributes['published_at'] = {
-        type: 'datetime',
-        configurable: false,
-      };
+      CREATOR_ATTRIBUTES.forEach(key => {
+        definition.attributes[key] = {
+          model: 'user',
+          plugin: 'admin',
+          configurable: false,
+        };
+      });
     }
 
     // Add every relationships to the loaded model for Bookshelf.

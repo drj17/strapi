@@ -1,18 +1,30 @@
 'use strict';
 
 const _ = require('lodash');
+const utils = require('strapi-utils');
+
 /**
  * default service
  *
  */
+const createCoreService = ({ model, strapi }) => {
+  const serviceFactory =
+    model.kind === 'singleType' ? createSingleTypeService : createCollectionTypeService;
 
-const NON_EDITABLE_FIELDS = ['created_by', 'updated_by', 'published_at'];
-const sanitizeInput = (data, model) => {
-  const timestamps = _.get(model, ['options.timestamps'], []);
-  const excludedFields = NON_EDITABLE_FIELDS.concat(timestamps);
-  const allowedFields = _.difference(Object.keys(model.attributes), excludedFields);
+  const service = serviceFactory({ model, strapi });
 
-  return _.pick(data, allowedFields);
+  return _.extend(service, withSanitize({ model }));
+};
+
+/**
+ * Mixins
+ */
+const withSanitize = ({ model }) => {
+  const { getNonWritableAttributes } = utils.contentTypes;
+
+  return {
+    sanitizeInput: data => _.omit(data, getNonWritableAttributes(model)),
+  };
 };
 
 /**
@@ -38,7 +50,7 @@ const createSingleTypeService = ({ model, strapi }) => {
      */
     async createOrUpdate(data, { files } = {}) {
       const entity = await this.find();
-      const sanitizedData = sanitizeInput(data, model);
+      const sanitizedData = this.sanitizeInput(data, model);
 
       if (!entity) {
         return strapi.entityService.create({ data: sanitizedData, files }, { model: modelName });
@@ -115,7 +127,7 @@ const createCollectionTypeService = ({ model, strapi }) => {
      */
 
     create(data, { files } = {}) {
-      const sanitizedData = sanitizeInput(data, model);
+      const sanitizedData = this.sanitizeInput(data, model);
       return strapi.entityService.create({ data: sanitizedData, files }, { model: modelName });
     },
 
@@ -126,7 +138,7 @@ const createCollectionTypeService = ({ model, strapi }) => {
      */
 
     update(params, data, { files } = {}) {
-      const sanitizedData = sanitizeInput(data, model);
+      const sanitizedData = this.sanitizeInput(data, model);
       return strapi.entityService.update(
         { params, data: sanitizedData, files },
         { model: modelName }
@@ -164,10 +176,4 @@ const createCollectionTypeService = ({ model, strapi }) => {
   };
 };
 
-module.exports = ({ model, strapi }) => {
-  if (model.kind === 'singleType') {
-    return createSingleTypeService({ model, strapi });
-  }
-
-  return createCollectionTypeService({ model, strapi });
-};
+module.exports = createCoreService;
